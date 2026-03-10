@@ -1,15 +1,7 @@
-#!/bin/sh
-#
-# Gradle start up script for UN*X
-#
-
+#!/usr/bin/env sh
 APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
-
-# Add default JVM options here.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
-
-# Attempt to set APP_HOME
+DEFAULT_JVM_OPTS=""
 PRG="$0"
 while [ -h "$PRG" ] ; do
     ls=`ls -ld "$PRG"`
@@ -24,16 +16,12 @@ SAVED="`pwd`"
 cd "`dirname \"$PRG\"`/" >/dev/null
 APP_HOME="`pwd -P`"
 cd "$SAVED" >/dev/null
-
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-
-# Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     JAVACMD="$JAVA_HOME/bin/java"
 else
     JAVACMD="java"
 fi
-
 exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \
     "-Dorg.gradle.appname=$APP_BASE_NAME" \
     -classpath "$CLASSPATH" \
