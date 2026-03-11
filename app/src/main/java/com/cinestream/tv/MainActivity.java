@@ -28,13 +28,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         prefs = getSharedPreferences("cinestream", MODE_PRIVATE);
 
         LinearLayout root = new LinearLayout(this);
@@ -45,47 +40,26 @@ public class MainActivity extends Activity {
         root.addView(setupScreen);
 
         webView = new WebView(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        webView.setLayoutParams(lp);
         webView.setVisibility(View.GONE);
-        webView.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT
-        ));
 
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setAllowFileAccess(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-        settings.setBuiltInZoomControls(false);
-        settings.setSupportZoom(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        WebSettings s = webView.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                setupScreen.setVisibility(View.GONE);
-                webView.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onReceivedError(WebView view, int errorCode,
-                                        String description, String failingUrl) {
-                webView.setVisibility(View.GONE);
-                setupScreen.setVisibility(View.VISIBLE);
-            }
-        });
+        webView.setWebViewClient(new WebViewClient());
 
         root.addView(webView);
         setContentView(root);
 
-        // Автозапуск если есть сохранённый адрес
-        String savedUrl = prefs.getString(PREF_URL, "");
-        if (!savedUrl.isEmpty()) {
-            connect(savedUrl);
-        }
+        String saved = prefs.getString(PREF_URL, "");
+        if (!saved.isEmpty()) connect(saved);
     }
 
     private LinearLayout buildSetupScreen() {
@@ -93,10 +67,7 @@ public class MainActivity extends Activity {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setGravity(Gravity.CENTER);
         layout.setBackgroundColor(Color.parseColor("#0a0a0f"));
-        layout.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT
-        ));
+        layout.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
         layout.setPadding(80, 80, 80, 80);
 
         TextView logo = new TextView(this);
@@ -116,11 +87,8 @@ public class MainActivity extends Activity {
         layout.addView(sub);
 
         final EditText input = new EditText(this);
-        // Подставить сохранённый адрес
-        String savedUrl = prefs.getString(PREF_URL, "");
-        if (!savedUrl.isEmpty()) {
-            input.setText(savedUrl.replace("http://", ""));
-        }
+        String saved = prefs.getString(PREF_URL, "").replace("http://", "");
+        if (!saved.isEmpty()) input.setText(saved);
         input.setHint("например: 192.168.1.15:8888");
         input.setHintTextColor(Color.parseColor("#4a4860"));
         input.setTextColor(Color.parseColor("#f0ede8"));
@@ -130,12 +98,9 @@ public class MainActivity extends Activity {
         input.setGravity(Gravity.CENTER);
         input.setSingleLine(true);
         input.setImeOptions(EditorInfo.IME_ACTION_GO);
-        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        inputParams.setMargins(0, 0, 0, 24);
-        input.setLayoutParams(inputParams);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        ip.setMargins(0, 0, 0, 24);
+        input.setLayoutParams(ip);
         layout.addView(input);
 
         Button btn = new Button(this);
@@ -144,26 +109,13 @@ public class MainActivity extends Activity {
         btn.setBackgroundColor(Color.parseColor("#e8b84b"));
         btn.setTextSize(18);
         btn.setPadding(48, 24, 48, 24);
-        btn.setLayoutParams(new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
-
-        btn.setOnClickListener(v -> {
-            String ip = input.getText().toString().trim();
-            if (!ip.isEmpty()) connect(ip);
-        });
-
-        input.setOnEditorActionListener((v, actionId, event) -> {
-            String ip = input.getText().toString().trim();
-            if (!ip.isEmpty()) connect(ip);
-            return true;
-        });
-
+        btn.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        btn.setOnClickListener(v -> { String t = input.getText().toString().trim(); if (!t.isEmpty()) connect(t); });
+        input.setOnEditorActionListener((v, a, e) -> { String t = input.getText().toString().trim(); if (!t.isEmpty()) connect(t); return true; });
         layout.addView(btn);
 
         TextView hint = new TextView(this);
-        hint.setText("Узнай адрес в Терминале на Mac: ipconfig getifaddr en0");
+        hint.setText("Узнай адрес: ipconfig getifaddr en0");
         hint.setTextColor(Color.parseColor("#4a4860"));
         hint.setTextSize(13);
         hint.setGravity(Gravity.CENTER);
@@ -174,11 +126,10 @@ public class MainActivity extends Activity {
     }
 
     private void connect(String ip) {
-        if (!ip.startsWith("http")) {
-            ip = "http://" + ip;
-        }
-        // Сохранить адрес
+        if (!ip.startsWith("http")) ip = "http://" + ip;
         prefs.edit().putString(PREF_URL, ip).apply();
+        setupScreen.setVisibility(View.GONE);
+        webView.setVisibility(View.VISIBLE);
         webView.loadUrl(ip);
     }
 
@@ -186,8 +137,7 @@ public class MainActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (webView.getVisibility() == View.VISIBLE && webView.canGoBack()) {
-                webView.goBack();
-                return true;
+                webView.goBack(); return true;
             } else if (webView.getVisibility() == View.VISIBLE) {
                 webView.setVisibility(View.GONE);
                 setupScreen.setVisibility(View.VISIBLE);
@@ -197,15 +147,6 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        webView.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        webView.onResume();
-    }
+    @Override protected void onPause() { super.onPause(); webView.onPause(); }
+    @Override protected void onResume() { super.onResume(); webView.onResume(); }
 }
