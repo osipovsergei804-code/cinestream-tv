@@ -1,6 +1,7 @@
 package com.cinestream.tv;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -21,29 +22,28 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private LinearLayout setupScreen;
-    private String serverUrl = "";
+    private SharedPreferences prefs;
+    private static final String PREF_URL = "last_url";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Полноэкранный режим
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // Главный контейнер
+        prefs = getSharedPreferences("cinestream", MODE_PRIVATE);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.parseColor("#0a0a0f"));
 
-        // Экран настройки (ввод IP)
         setupScreen = buildSetupScreen();
         root.addView(setupScreen);
 
-        // WebView
         webView = new WebView(this);
         webView.setVisibility(View.GONE);
         webView.setLayoutParams(new LinearLayout.LayoutParams(
@@ -60,12 +60,12 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setBuiltInZoomControls(false);
         settings.setSupportZoom(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                // Скрыть экран настройки когда страница загружена
                 setupScreen.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
             }
@@ -73,7 +73,6 @@ public class MainActivity extends Activity {
             @Override
             public void onReceivedError(WebView view, int errorCode,
                                         String description, String failingUrl) {
-                // Показать экран настройки при ошибке
                 webView.setVisibility(View.GONE);
                 setupScreen.setVisibility(View.VISIBLE);
             }
@@ -81,6 +80,12 @@ public class MainActivity extends Activity {
 
         root.addView(webView);
         setContentView(root);
+
+        // Автозапуск если есть сохранённый адрес
+        String savedUrl = prefs.getString(PREF_URL, "");
+        if (!savedUrl.isEmpty()) {
+            connect(savedUrl);
+        }
     }
 
     private LinearLayout buildSetupScreen() {
@@ -94,7 +99,6 @@ public class MainActivity extends Activity {
         ));
         layout.setPadding(80, 80, 80, 80);
 
-        // Логотип
         TextView logo = new TextView(this);
         logo.setText("CINE STREAM");
         logo.setTextColor(Color.parseColor("#e8b84b"));
@@ -103,7 +107,6 @@ public class MainActivity extends Activity {
         logo.setPadding(0, 0, 0, 16);
         layout.addView(logo);
 
-        // Подзаголовок
         TextView sub = new TextView(this);
         sub.setText("Введи адрес сервера с MacBook");
         sub.setTextColor(Color.parseColor("#6b6880"));
@@ -112,8 +115,12 @@ public class MainActivity extends Activity {
         sub.setPadding(0, 0, 0, 48);
         layout.addView(sub);
 
-        // Поле ввода
         final EditText input = new EditText(this);
+        // Подставить сохранённый адрес
+        String savedUrl = prefs.getString(PREF_URL, "");
+        if (!savedUrl.isEmpty()) {
+            input.setText(savedUrl.replace("http://", ""));
+        }
         input.setHint("например: 192.168.1.15:8888");
         input.setHintTextColor(Color.parseColor("#4a4860"));
         input.setTextColor(Color.parseColor("#f0ede8"));
@@ -131,37 +138,30 @@ public class MainActivity extends Activity {
         input.setLayoutParams(inputParams);
         layout.addView(input);
 
-        // Кнопка подключения
         Button btn = new Button(this);
         btn.setText("ПОДКЛЮЧИТЬСЯ");
         btn.setTextColor(Color.parseColor("#0a0a0f"));
         btn.setBackgroundColor(Color.parseColor("#e8b84b"));
         btn.setTextSize(18);
         btn.setPadding(48, 24, 48, 24);
-        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
+        btn.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        btn.setLayoutParams(btnParams);
+        ));
 
         btn.setOnClickListener(v -> {
             String ip = input.getText().toString().trim();
-            if (!ip.isEmpty()) {
-                connect(ip);
-            }
+            if (!ip.isEmpty()) connect(ip);
         });
 
         input.setOnEditorActionListener((v, actionId, event) -> {
             String ip = input.getText().toString().trim();
-            if (!ip.isEmpty()) {
-                connect(ip);
-            }
+            if (!ip.isEmpty()) connect(ip);
             return true;
         });
 
         layout.addView(btn);
 
-        // Подсказка
         TextView hint = new TextView(this);
         hint.setText("Узнай адрес в Терминале на Mac: ipconfig getifaddr en0");
         hint.setTextColor(Color.parseColor("#4a4860"));
@@ -177,8 +177,9 @@ public class MainActivity extends Activity {
         if (!ip.startsWith("http")) {
             ip = "http://" + ip;
         }
-        serverUrl = ip;
-        webView.loadUrl(serverUrl);
+        // Сохранить адрес
+        prefs.edit().putString(PREF_URL, ip).apply();
+        webView.loadUrl(ip);
     }
 
     @Override
@@ -188,7 +189,6 @@ public class MainActivity extends Activity {
                 webView.goBack();
                 return true;
             } else if (webView.getVisibility() == View.VISIBLE) {
-                // Показать экран настройки
                 webView.setVisibility(View.GONE);
                 setupScreen.setVisibility(View.VISIBLE);
                 return true;
