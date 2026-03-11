@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
     private LinearLayout splashScreen;
     private SharedPreferences prefs;
     private static final String PREF_URL = "server_url";
-    private static final String DEFAULT_URL = "http://192.168.1.147:8888/";
+    private static final String DEFAULT_URL = "https://inerasable-unverbalized-brittanie.ngrok-free.dev/";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
